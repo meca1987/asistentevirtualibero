@@ -1,0 +1,167 @@
+/*  CSS Document - jQuery Mobile Overrides                */
+/*  Written by Chris Converse - http://codifydesign.com   */
+
+/* Swatch A Overrides */
+.ui-overlay-a,
+.ui-page-theme-a,
+.ui-page-theme-a .ui-panel-wrapper {
+	background:#FFFFFF url(../images/logoAvi.png) no-repeat 50% 1em;
+	background-size:14em 10em;
+	border-color: #B3B3B3 /*{a-page-border}*/;
+	color: #333333 /*{a-page-color}*/;
+	text-shadow: 0 /*{a-page-shadow-x}*/ 1px /*{a-page-shadow-y}*/ 0 /*{a-page-shadow-radius}*/ #ffffff /*{a-page-shadow-color}*/;}
+
+.ui-overlay-b,
+.ui-page-theme-b,
+.ui-page-theme-b .ui-panel-wrapper {
+	background-color: #FFFFFF /*{b-page-background-color}*/;
+	border-color: #B3B3B3 /*{b-page-border}*/;
+	color:#333333 /*{b-page-color}*/;
+	text-shadow: 0 /*{b-page-shadow-x}*/ 1px /*{b-page-shadow-y}*/ 0 /*{b-page-shadow-radius}*/ #ffffff /*{b-page-shadow-color}*/;
+}
+.ui-page.ui-body-a.ui-page-active {
+	background:#FFFFFF url(../images/icon3.png) no-repeat 50% 20px;
+	background-size:1em 1em;	
+}
+.ui-page.ui-body-a.ui-page-active .ui-header.ui-bar-a { 
+	display:none; 
+}
+
+#home .ui-content{ 
+	padding-top:12em; 
+	padding-bottom:0px; 
+	margin:0px 15px 10px 15px; 
+}
+
+body { 
+	background-color: #fff; 
+}
+
+.ui-page-theme-b .ui-header {
+	border:none;
+	background:#FFFFFF url(../images/icon3.png) no-repeat right;
+	background-size:6em 3em;
+}
+
+.ui-header h1.ui-title{
+}
+
+.ui-header .ui-btn-left{
+}
+
+/*.ui-page.ui-body-c.ui-overlay-a.ui-dialog.ui-page-active .ui-header h1.ui-title { margin: .8em 10px .8em 40px; }*/
+
+/*Footer*/
+.ui-footer.ui-bar-inherit{
+	border:0px solid #fff;
+	background:#fff; /* Old browsers */
+	/*background-image:url(../images/footer_gradient.jpg);
+	background-size:100% 100%;
+    background-repeat:no-repeat;*/
+}
+.ui-footer h4.ui-title { 
+	text-align:center;
+	color:#777; 
+	font-size:.8em;
+	font-weight:normal;
+	margin:5px 0px 10px 0px;
+}
+
+/*.ui-footer .ui-controlgroup-horizontal { margin: 10px 20px 15px 20px; text-align: center; }*/
+
+
+#block-ui {
+	background-color:#000;
+	background-image:url(themes/images/ajax-loader.gif);
+	background-position:center;
+	background-repeat:no-repeat;
+    display			:none;
+	height			:100%;
+	left			:0px; 
+    position		:fixed;
+	opacity			:0.2;
+    top				:0px;
+    width			:100%;
+    z-index			:9999;
+}
+
+/*** ESTILOS PARA LA PÁGINA DEL CHAT ***/
+.msgIbero, .msgAliado{
+	border-radius:6px;
+	font-family:'Arial', Helvetica, sans-serif;
+	height:auto;
+	padding:11px 8px 11px 8px;
+	margin:5px 10px;
+	text-align:justify;
+	/*
+	background-repeat:no-repeat;
+	background-position:10px center;
+	*/
+	width:auto !important;
+	-webkit-border-radius:3px 5px 1px 4px; /* recuerda la primera frase */
+	-moz-border-radius:4px; /* si quieres todas las esquinas iguales */
+	/*
+	border			:1px solid #000 !important;
+	padding			:10px !important;
+	margin-bottom	:1px !important;
+	margin-top		:10px !important;*/
+}
+
+.msgAliado div.labelMsg{
+	border-bottom:1px solid #00529B;
+	text-align:right;	
+}
+
+.msgIbero div.labelMsg{
+	border-bottom:1px solid #4F8A10;
+	text-align:left;	
+}
+
+.msgAliado{
+	color			:#00529B;
+	background-color:#BDE5F8;
+	/*color			:#00529B !important;
+	background-color:#BDE5F8 !important;
+	text-align		:right !important;*/
+	z-index			:0;
+}
+
+.msgIbero{
+	color			:#4F8A10;
+	background-color:#DFF2BF;
+	/*color			:#4F8A10 !important;
+	background-color:#DFF2BF !important;
+	text-align		:left !important;*/
+	z-index			:0;
+	
+	
+}
+
+.contMsg, .labelMsg{
+	overflow:hidden;
+	text-overflow:ellipsis;
+	white-space:initial;
+}
+
+.contMsg{
+	display:block; 
+	position:static;
+	width:100%;
+}
+
+.labelMsg{
+	display:block;
+	font-weight:bold;
+	position:static;
+	width:100%; 
+}
+/***************************************/
+
+/*** ESTILO PARA EL CONTENEDOR DEL TEXTO DE LOS MENSAJES DE POPUP (SOLO PARA LOS POPUP QUE TIENEN EL ID: "popupIndex", "myPopupDiv"); ***/
+.mensajes{
+	padding:5px !important;
+	text-align:left !important;
+	line-height:1.2 !important;
+}
+
+/**************************************************************************/

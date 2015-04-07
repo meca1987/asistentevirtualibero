@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<widget 
+	xmlns 			= "http://www.w3.org/ns/widgets"
+    xmlns:gap 		= "http://phonegap.com/ns/1.0"
+	xmlns:android 	= "http://schemas.android.com/apk/res/android"
+    id        		= "com.gedica.chatIberoMovil"
+    version   		= "1.0.1">
+
+<name>Asistente Virtual</name>
+
+<description>Asistente virtual de Ibero Movil.</description>
+
+<author href="https://alex.com" email="alexll_1993@hotmail.com">
+Alex Llovera
+</author>
+
+<gap:platform name="android" />
+
+<!--Imagenes en android-->
+<!--Iconos-->
+<icon src="images/icon.png" />
+<icon src="images/iconos/iconosApp/ldpi/appicon.png" gap:platform="android" gap:density="ldpi" />
+<icon src="images/iconos/iconosApp/mdpi/appicon.png" gap:platform="android" gap:density="mdpi" />
+<icon src="images/iconos/iconosApp/hdpi/appicon.png" gap:platform="android" gap:density="hdpi" />
+<icon src="images/iconos/iconosApp/xhdpi/appicon.png" gap:platform="android" gap:density="xhdpi" />
+<icon src="images/iconos/iconosApp/xxhdpi/appicon.png" gap:platform="android" gap:density="xxhdpi" />
+<icon src="images/iconos/iconosApp/xxxhdpi/appicon.png" gap:platform="android" gap:density="xxxhdpi" />
+
+<!--SPLAHS-->
+<!--SPLAHS con la orientacion "landscape"-->
+<gap:splash src="images/splash/screens/land-ldpi/default.png" gap:platform="android" gap:density="ldpi" gap:qualifier="land-ldpi" />
+
+<gap:splash src="images/splash/screens/land-mdpi/default.png" gap:platform="android" gap:density="mdpi" gap:qualifier="land-mdpi" />
+
+<gap:splash src="images/splash/screens/land-hdpi/default.png" gap:platform="android" gap:density="hdpi" gap:qualifier="land-hdpi" />
+
+<gap:splash src="images/splash/screens/land-xhdpi/default.png" gap:platform="android" gap:density="xhdpi" gap:qualifier="land-xhdpi" />
+
+<gap:splash src="images/splash/screens/land-xxhdpi/default.png" gap:platform="android" gap:density="xxhdpi" gap:qualifier="land-xxhdpi" />
+
+<gap:splash src="images/splash/screens/land-xxxhdpi/default.png" gap:platform="android" gap:density="xxxhdpi" gap:qualifier="land-xxxhdpi" />
+
+<!--SPLAHS con la orientacion "portrait"-->
+<gap:splash src="images/splash/screens/port-ldpi/default.png" gap:platform="android" gap:density="ldpi" gap:qualifier="port-ldpi" />
+
+<gap:splash src="images/splash/screens/port-mdpi/default.png" gap:platform="android" gap:density="mdpi" gap:qualifier="port-mdpi" />
+
+<gap:splash src="images/splash/screens/port-hdpi/default.png" gap:platform="android" gap:density="hdpi" gap:qualifier="port-hdpi" />
+
+<gap:splash src="images/splash/screens/port-xhdpi/default.png" gap:platform="android" gap:density="xhdpi" gap:qualifier="port-xhdpi" />
+
+<gap:splash src="images/splash/screens/port-xxhdpi/default.png" gap:platform="android" gap:density="xxhdpi" gap:qualifier="port-xxhdpi" />
+
+<gap:splash src="images/splash/screens/port-xxxhdpi/default.png" gap:platform="android" gap:density="xxxhdpi" gap:qualifier="port-xxxhdpi" />
+
+<!-- fin de la configuracion de imagenes, splash e iconos del aplicativo -->
+
+<preference name="SplashScreen" value="screen" />
+<preference name="SplashScreenDelay" value="5000" />
+
+<preference name="webviewbounce" value="false" />
+<preference name="stay-in-webview" value="true" />
+<preference name="KeyboardShrinksView" value="false" />
+<preference name="exit-on-suspend" value="false" /><!--IOS EN pruebas evita que se suspende la app al momento de cambiar-->
+<preference name="HideKeyboardFormAccessoryBar" value="true" />
+
+<!--Evita que se cierre la app al momento de presionar el launcher de nuevo-->
+<gap:config-file platform="android" parent="/manifest/application">
+    <activity android:launchMode="singleTask" />
+</gap:config-file>
+
+<gap:config-file platform="android" parent="/manifest/application">
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" ></uses-permission>
+</gap:config-file>
+
+<!--Plugin de sqlLite-->
+<gap:plugin name="com.brodysoft.sqliteplugin" version="1.0.6" />
+
+<!--Plugin de notificaciones --> 
+<gap:plugin name="com.phonegap.plugins.pushplugin" 	version="2.4.0" />
+
+<!-- Plugins de cordova/PhoneGap -->
+<gap:plugin name="org.apache.cordova.vibration" 	version="0.3.11" />
+<gap:plugin name="org.apache.cordova.dialogs" 		version="0.2.10" />
+<gap:plugin name="org.apache.cordova.device" 		version="0.2.12" />
+
+<access origin="*" />
+</widget>

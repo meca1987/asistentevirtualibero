@@ -1,0 +1,345 @@
+ <!--                                                                            
+  * Pagina de Autenticación.
+  * Página donde se autentica el usuario y se genera la registración del servicio "push" de google.
+  * @author original Isaac Parra
+  * @CREADO  Alex Llovera 24/02/2015
+  * @version 0.1
+  */-->
+<!DOCTYPE html> 
+	<html lang="es">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Inicio de sesión</title>
+		    
+    <!-- Declaración de plugins y frameworks -->
+    	<link rel="stylesheet" href="css/themes/ibero1.0.1.min.css" />
+		<link rel="stylesheet" href="css/themes/jquery.mobile.icons.min.css" />
+		<link rel="stylesheet" href="css/jquery.mobile.structure-1.4.2.min.css" /> 
+    	
+		<script src="js/jquery-1.10.2.min.js"></script>
+        <!-- Configuración global para el framework jquery mobile 
+    	Nota: el siguiente documento javascript puede ser modificado de acuerdo a los requerimientos de la aplicación-->
+    	<script src="js/jqMobileConfig.js"></script>
+    	<!-------------------------------------------------------> 
+		<script src="js/jquery.mobile-1.4.2.min.js"></script>
+        
+	<!--- fin de la declaración de plugins y frameworks  --->
+      
+    <!-- Declaración de documentos css y javascript globales para la aplicación -->
+		<script src="js/scriptGlobales.js"></script>
+                
+    <!-- Archivo utilizado para sobrescribir estilos para la pantalla index -->
+		<link rel="stylesheet" href="css/overrides.css" />
+
+<script type="text/javascript">
+
+/*------------------BLOQUE DE DECLARACIÓN DE VARIABLES PARA EL index.html ------------*/
+	var textServicios	= 'http://wsibero.iberoseguros.com/',
+		textDireccion	= 'wsAsistenteVirtual/',
+		idDispositivo	= 0,
+		marcaDispositivo= 0,
+		arrayAux		= [],
+		globales		= {},
+		jqmReady = $.Deferred(),
+		pgReady  = $.Deferred();
+/*-----------------------------------------------------------------------------------*/
+
+function redireccionar(statusSesion, desdeBaseDatos){
+	/* esta funcion recibe dos valores,
+			statusSesion: true (sesion activa), false (sesion inactiva)
+			desdeBaseDatos: true (los datos de la sesion se tomaron de la base de datos local), false (los datos de la sesion se tomaron de la base de datos externa)
+	/* nota: dentro de la variable de tipo vector "arrayAux" estan los valores devueltos por la base de datos local, si existe una sesion activa */
+	if(statusSesion){
+		
+		if(desdeBaseDatos){//esta condición utiliza la variable "desdeBaseDatos" como bandera, para determinar si los datos que iran en las variables globales de la app, se tomaran por lo devuelto de la base de datos local
+			//alert('si hay sesión activa '+ arrayAux[0]);
+		
+			itemGlobales = new varGlobales();
+			globales = {
+				'gServicios' 	: textServicios,
+				'gDireccionWS' 	: textDireccion,
+				'gUsuario' 		: arrayAux[0],
+				'gToken' 		: arrayAux[1]
+			}
+			itemGlobales.crearGlobales(globales);
+		}
+	//nota: si ignora el anterior if, entonces es porque los valores fueron tomados en la base de datos del servidor...
+		
+	//--- REDIRECCIONAR SI ES ANDROID O IOS ---
+		if(marcaDispositivo == 'A'){//el dispositivo cliente es android
+			window.location.href = 'chat/chat.html';
+		}else{
+			if(marcaDispositivo == 'I'){//el dispositivo es ios
+				alert('Esta aplicación no es compatible (aún) con ios.');
+				//window.location.href = 'chat/xxx.html';
+			}else{
+				unlockUi();
+				mensaje_alert('popupIndex', 'mensaje', 'Error: index.js no asigno la marca de dispositivo.');
+			}
+		}
+	//-----------------------------------------
+	}else{
+		unlockUi();	
+	}
+}//fin de la funcion "redireccionar"
+
+
+function cierreSesion(usuario, token){
+	lockUi();
+	/* Función para el cierre de la sesión */
+	$('.ui-popup').popup('close');
+	textArchivoValidacion = textServicios + textDireccion + "cerrarsesion";
+
+	$.getJSON(textArchivoValidacion,{
+		
+		cUsuario:usuario,
+		cToken	:token
+		
+	}).done(function(textRespuestaServer){
+		
+		if(textRespuestaServer.error == 1){
+			unlockUi();
+//			window.localStorage.removeItem('chatMovil');
+//			navigator.app.exitApp();
+						
+		}else{
+			unlockUi();
+//			mensaje_alert('myPopupDiv', 'mensaje', 'No se ha podido cerrar la sesión.');
+		}		
+	}).fail(function( jqxhr, textStatus, error ){
+		unlockUi();
+    	var err = textStatus + ", " + error;
+//		mensaje_alert('myPopupDiv', 'mensaje', 'Ha ocurrido un error en la conexión, ofrecemos disculpas por los inconvenientes: ' + err);
+//		alert('Ha ocurrido un error en la conexión, ofrecemos disculpas por los inconvenientes: ' + err);
+	}); 
+}//--- FIN DE LA FUNCIÓN "cierreSesion" ---
+
+// función "operadoresConectados" comprueba si hay algun operador conectado al servicio de chat, recibe dos parametros de entrada, textUsuario y textToken 
+function operadoresConectados(textUsuario, textToken){ 
+	
+	textArchivoValidacion = textServicios+textDireccion+"operadores_conectados";
+
+	$.getJSON(textArchivoValidacion,{
+		cUsuario:textUsuario,
+		cToken	:textToken
+		
+	}).done(function(textRespuestaServer) {		
+
+		if(textRespuestaServer.error == null){
+
+			//nota: función "iniciarSesionUsuario" se encuentra en el documento javascript "baseDatos.js" y recibe tres parametros, textUsuario:nombre del usuario que inicio sesión, token:cadena token generada por el servidor, callback:funcion que se ejecutara después de terminar la transaccion en la base de datos local
+			
+			iniciarSesionUsuario(textUsuario, textToken, redireccionar);
+			//NOTA IMPORTANTE!! : la función anterior se encargara de iniciar la sesión del usuario dentro de la base de datos local, se ejecutara depués de la respuesta del servidor para que este sincronizado con la base de datos externa.
+			
+			//--- Si el servidor responde "null" es porque que hay operadores conectados, entonces redireccione a la pantalla de chat indicada ...
+
+		}else{
+			if(textRespuestaServer.idError!=0){
+				unlockUi();
+				mensaje_alert('popupIndex', "mensaje", textRespuestaServer.error);
+				cierreSesion(textUsuario, textToken);
+			}
+			if(textRespuestaServer.idError==0){
+				unlockUi();
+				mensaje_alert('popupIndex', 'mensaje', textRespuestaServer.error);
+				cierreSesion(textUsuario, textToken);
+			}
+		}
+	});
+}// fin de la función "operadoresConectados"
+
+//--- funcion "validar", autentica el usuario haciendo el llamado al webservice correspondiente ---
+function validar() {
+	lockUi();
+	
+	datosUsuario  = $("#txtNombre").val();
+	datosPassword = $("#pwdClave").val();
+    
+	//indica la aplicacion de la que se esta conectando
+	aplicacion = "CHAT";
+	
+	archivoValidacion = textServicios+textDireccion+"autenticar";// ESTA VARIABLE GUARDA LOS PARAMETROS DE SERVICIO Y DIRECCIÒN DEL WEB SERVICE Y LA FUNCIÒN QUE SERAN LLAMADOS DESDE EL CLIENTE (MAS NO LOS PARAMETROS PROPIOS DEL WEB SERVICE)
+	
+	if(!idDispositivo.length < 1){
+	
+		$.getJSON(archivoValidacion,{ 
+			usuario			:datosUsuario, //usuario
+			clave			:datosPassword,//clave
+			cDispositivo	:idDispositivo,//idDispositivo
+			tipoDispositivo	:marcaDispositivo,//marcaDispositivo
+			cAplicacion     :aplicacion //aplicacion
+		
+		}).done(function(respuestaServer){
+				
+			if(respuestaServer.autenticado == "true"){ //si el usuario ingresado ha sido autenticado entonces
+			
+			/** Cuando el servidor responde que el usuario es autentico, se crea el bloque de variables globales que se usaran durante toda la aplicación **/
+				itemGlobales = new varGlobales();
+	
+				globales = {
+					'gServicios' 	: textServicios,
+					'gDireccionWS' 	: textDireccion,
+					'gUsuario' 		: datosUsuario,
+					'gToken' 		: respuestaServer.token,
+					/*
+					'gRol'			: respuestaServer.rol,
+					'gTipoDisposi'	: marcaDispositivo
+					*/
+				}
+	
+				itemGlobales.crearGlobales(globales);
+			
+				// se llama a la funcion que comprueba si existe operadores conectados
+				operadoresConectados(datosUsuario, respuestaServer.token);
+			
+			}else{
+				unlockUi();
+		 		mensaje_alert('popupIndex', "mensaje", "El usuario o clave que has ingresado son incorrectos.");
+			}  
+		}).fail(function(jqxhr, textStatus, error){
+			unlockUi();
+			var err = textStatus + ", " + error;
+			mensaje_alert('popupIndex', "mensaje", "Ha ocurrido un error en la conexión, ofrecemos disculpas por los inconvenientes: " + err);
+		});
+		
+	}else{
+		unlockUi();
+		mensaje_alert('popupIndex', 'mensaje', 'No se pudo registrar este dispositivo al servicio de google, por favor compruebe su conexión a internet y luego reinicie esta aplicación.');
+	}
+}//--- FIN DE LA FUNCIÓN "VALIDAR" ---
+
+function procForm(){
+	
+	usuario = $('#txtNombre').val();
+	clave	= $('#pwdClave').val();
+	msg		= 'Debes llenar todos los campos.';
+
+	if(usuario.length < 1){
+		mensaje_alert('popupIndex', 'mensaje', msg);
+	}else{
+		if(clave.length < 1){
+			mensaje_alert('popupIndex', 'mensaje', msg);
+		}else{
+			validar();
+		}
+	}
+}
+
+function iniciar(){
+	/* deprecado...
+	altura		= $(window).height();
+	$('#home .ui-content').css('padding-top', altura * 0.3);*/
+	
+	if(idDispositivo != 0){ //comprueba si ya cargo el token
+	//Nota: este bloque se ejecutaria si el dispositivo cliente es apple... ya que solo los dispositivos de apple usan "token" para su servicio de push...
+		alert('idDispositivo para ios: ' + idDispositivo);
+	}
+}
+
+function ejecutarConsultarUsuarioActivo(){
+	consultarUsuarioActivo(redireccionar);//nota: el valor de entrada de la funcion "consultarUsuarioActivo" es en nombre de una funcion
+}
+
+// jqm ready
+$(document).bind('pagecreate', function(){
+
+	jqmReady.resolve();
+
+	//--- CARGAR LOS EVENTOS DE LA PÁGINA ---
+	$('#btnLogin').bind('vclick', procForm);
+	//---------------------------------------
+	
+});
+
+// phonegap ready
+document.addEventListener('deviceready', function(){
+	
+	pgReady.resolve();
+	
+	setTimeout(crearTablas(ejecutarConsultarUsuarioActivo), 200);//este set time out es un pequeño fix, para que siempre de tiempo de ejecutar los procesos de registro del dispositivo al servicio de google; nota2: el valor de entrada de la funcion "crearTablas" es una funcion callback
+	
+	} , false);
+
+$.when(jqmReady, pgReady).then(function () { 
+//--- se activa esta función si solo si, los plugins de phonegap se han cargado, jQuery está preparado, y el DOM esta cargado...
+		//---llamamos el registro al servicio de google ---
+		app.initialize();	
+		//-------------------------------------------------
+		iniciar();
+});
+
+
+</script> 
+</head>
+<body>
+
+<!-- Por ahora los div "block-ui-on y block-ui-off" no se estan usando
+<div id="block-ui-on"></div>
+<div id="block-ui-off"></div>
+-->
+
+<div id="block-ui"></div>
+
+<div data-role="page" id="home" data-theme="a">
+
+	<div data-role="content" id="divContenedor">
+		
+        <div class="ui-field-contain">
+             <label for="txtNombre">Usuario</label>
+             <input type="text" id="txtNombre">
+        </div>
+        <div class="ui-field-contain">
+        	<label for="pwdClave">Clave</label>
+            <input type="password" data-role="pass" id="pwdClave">
+        </div>
+        
+        <a href="#"
+        	id="btnLogin"
+        	data-role="button"
+            class="ui-btn ui-shadow ui-corner-all">
+       		Iniciar Sesión
+        </a>
+	</div>
+
+  	<!--
+    	Se elimina el footer 27/03/2015
+    <div data-role="footer" data-id="pie_pagina" data-position="fixed">
+			<h4>©GEDICA</h4>
+	</div>-->
+<!--- SECCION DE POPUPS PARA ESTA PÁGINA --->
+    <div data-role="popup"
+        id="popupIndex"
+        data-overlay-theme="b"
+        data-dismissible="false"
+        data-transition="pop"
+        data-position-to="window">
+    
+    	<a href="#" 
+        	data-rel="back" 
+            data-role="button" 
+            data-icon="delete"
+            data-iconpos="notext"
+            class="ui-shadow ui-btn-right"></a>
+	
+    	<div id="mensaje" class="mensajes"></div>
+    </div>
+<!--- ------------------------------------ --->
+
+</div>
+<!--- PLUGINS ESPECIALES QUE SE DEBEN CARGAR AL FINAL DE LA PÁGINA --->
+	<script type="text/javascript" src="phonegap.js"></script>
+	<script type="text/javascript" src="js/PushNotification.js"></script>
+    <script type="text/javascript" src="js/SQLitePlugin.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/baseDatos.js"></script>
+
+	<script>
+	
+		lockUi();
+	
+	</script>
+
+</body>
+</html>

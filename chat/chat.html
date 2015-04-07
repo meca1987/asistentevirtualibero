@@ -1,0 +1,598 @@
+ <!--                                                                            
+  * Página de chat, aplicación independiente.
+  * @author original Isaac Parra 24/03/2014
+  * @CREADO Alex Llovera 03/2015 
+  * @version 0.1 
+  */-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+    <!--
+    <meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+    -->
+	<title>Chat Móvil</title>
+
+ 	<!-- Declaración de plugins y frameworks -->
+    	<link rel="stylesheet" href="../css/themes/ibero1.0.1.min.css" />
+		<link rel="stylesheet" href="../css/themes/jquery.mobile.icons.min.css" />
+		<link rel="stylesheet" href="../css/jquery.mobile.structure-1.4.2.min.css" /> 
+    	
+		<script src="../js/jquery-1.10.2.min.js"></script>
+	<!-- Configuración global para el framework jquery mobile 
+    	Nota: el siguiente documento javascript puede ser modificado de acuerdo a los requerimientos de la aplicación-->
+    	<script src="../js/jqMobileConfig.js"></script>
+    <!------------------------------------------------------->
+		<script src="../js/jquery.mobile-1.4.2.min.js"></script> 
+	<!--- fin de la declaración de plugins y frameworks  --->
+      
+    <!-- Declaración de documentos css y javascript globales para la aplicación -->
+		<script src="../js/scriptGlobales.js"></script>       
+    <!-- estilos para el scroll --->
+    
+    	<link rel="stylesheet" href="../css/jquery.mobile.iscrollview.css" />
+        <link rel="stylesheet" href="../css/jquery.mobile.iscrollview-pull.css" />
+    <!--- --------------------- --->
+ 
+ 	<!--- plugin para el funcionamiento del scroll "iScroll" --->
+    	<script src="../plugins/iscroll/iscroll.js"></script>
+        <script src="../js/jquery.mobile.iscrollview.js"></script>   
+    <!--- -------------- --->
+                
+    <!-- Archivo utilizado para sobrescribir estilos generales de la aplicación -->
+		<link rel="stylesheet" href="../css/overrides.css" />
+
+<script type="text/javascript">
+
+/* BLOQUE DE VARIABLES GLOBALES,
+	EN ESTE BLOQUE SE "LLAMAN" Y SE GUARDAN LAS VARIABLES "GLOBALES" DE LA APLICACION, QUE ESTAN ALMACENADAS A TRAVÉS DE "localStorage" */
+itemGlobales = new varGlobales();
+	
+vGlobales = itemGlobales.obtenerGlobales();
+	
+var textServicios 		= vGlobales['gServicios'],
+	textDireccion 		= vGlobales['gDireccionWS'],
+	textToken 			= vGlobales['gToken'],
+	textUsuario 		= vGlobales['gUsuario'].toUpperCase(),
+
+//--- DECLARACION DE VARIABLES GLOBALES PARA EL SCRIPT LOCAL DE ESTA PÁGINA ---
+	noRepetido	=0, 
+	conMensaje	=0, 
+	y			=0, 
+	dataCadena	='',
+	jqmReady	= $.Deferred(),
+	pgReady		= $.Deferred(),
+	msg			= '';
+	statusPag	= false;
+	
+//------------------------------------------------------------------------------
+
+function salirApp(){
+	window.localStorage.removeItem('chatMovil');
+	navigator.app.exitApp();
+}//fin de la función "salirApp"
+
+function cierreSesion(){
+	/* Función para el cierre de la sesión */
+	$('.ui-popup').popup('close');
+	lockUi();
+	textArchivoValidacion = textServicios + textDireccion + "cerrarsesion";
+
+	$.getJSON(textArchivoValidacion,{
+		
+		cUsuario:textUsuario,
+		cToken	:textToken
+		
+	}).done(function(textRespuestaServer){
+		
+		if(textRespuestaServer.error == 1){
+			
+			cerrarSesionBaseDatos(textUsuario, textToken, salirApp);	
+						
+		}else{
+
+			cerrarSesionBaseDatos(textUsuario, textToken, salirApp);	
+//			mensaje_alert('myPopupDiv', 'mensaje', 'No se ha podido cerrar la sesión.');
+		}		
+	}).fail(function( jqxhr, textStatus, error ) {
+	
+		cerrarSesionBaseDatos(textUsuario, textToken, salirApp);
+//		var err = textStatus + ", " + error;
+//		mensaje_alert('myPopupDiv', 'mensaje', 'Ha ocurrido un error en la conexión, ofrecemos disculpas por los inconvenientes: ' + err);
+	}); 
+}//--- FIN DE LA FUNCIÓN "cierreSesion" ---
+
+function expirar(){
+	mensaje_alert('myPopupDiv', "mensaje", "El tiempo de sesión ha expirado");
+	
+	setTimeout(function(){
+		window.location.href="../index.html";
+	},4000);	
+}
+
+
+function refrescarScroll(){ //función para refrescar el scroll de la página
+		
+		$('#contMsgChat').listview('refresh');
+
+		setTimeout(function(){
+			
+			Y = $('#contenedorScroll').iscrollview('maxScrollY');
+			$('#contenedorScroll').iscrollview("scrollTo", 0, Y, 1000);
+				
+		}, 300);
+}//--- FIN DE LA FUNCIÓN "refrescarScroll" ---
+
+function cargarVentChat(){
+	lockUi();
+	
+	vAux  = false;
+	vAux2 = false;
+	
+	textDatosconsultar = textServicios+textDireccion+"conversacion";	
+	//alert('contenido de variables, textUsuario: ' + textUsuario + ' textToken: ' + textToken);	
+	
+	var petJson = $.getJSON(textDatosconsultar,{
+		cUsuario	:textUsuario,
+		cToken		:textToken,
+		nUsuarioChat:textUsuario
+	
+	}).done(function(respuestaServer){	
+	
+		//alert('esto devuelve el servidor: idError: ' + respuestaServer.idError + ' .error: ' + respuestaServer.error);
+			
+		if(respuestaServer.idError==1){
+			mensaje_alert('myPopupDiv', 'mensaje', respuestaServer.error);
+			unlockUi();
+		}else{
+			
+			if(respuestaServer.idError==0){
+				unlockUi();
+				expirar();
+				
+			}else{
+				if(respuestaServer.idError==2){
+					//No hay data encontrada, es decir, no hay conversaciones.
+					vAux = false;
+					statusPag = false;
+				}else{
+					if(respuestaServer.error == null){
+						vAux2 = true;
+					}else{
+						vAux = true;	
+					}
+				}
+			}//fin del segundo if
+		}//fin del primer if
+
+		dataCadena = '';//refresca la variable "dataCadena" para que no se dupliquen los mensajes
+		
+		if(!vAux){
+			
+			if(vAux2){
+				for(var j in respuestaServer){
+					if(respuestaServer[j].idEmisor == textUsuario){
+						
+						if(respuestaServer[j].chatMensaje != 'Solicito un operador'){
+						
+						dataCadena += '<li><div class="msgAliado"><div class="labelMsg">:Yo</div><div class="contMsg">' + respuestaServer[j].chatMensaje + '</div></div></li>';
+						
+						}
+						
+					}else{
+						dataCadena += '<li><div class="msgIbero"><div class="labelMsg">Ibero:</div><div class="contMsg">' + respuestaServer[j].chatMensaje + '</div></div></li>';
+					}
+				}
+			}
+
+			if(dataCadena.length > 0 && dataCadena != 'undefined'){
+					
+				if(statusPag == false){
+					
+					function continuarProcesoPrimerPlano(){
+						$('.ui-popup').popup('close');
+						statusPag = true;
+						unlockUi();
+					}
+										
+					lockUi();
+					actualizarInstancia(textUsuario, textToken, 'conversacioninactiva', continuarProcesoPrimerPlano);
+				}
+				
+				$("#contMsgChat").append(dataCadena);
+				refrescarScroll();
+					
+			}else{
+					
+				if ($('#popupPrimeraVez').parent().hasClass('ui-popup-hidden')){//si el popup "#popupPrimeraVez" esta cerrado entonces...
+					
+					$('#popupPrimeraVez a#btnPedirAyuda').css('visibility', 'visible');
+					
+					msg = '¡Felicidades ' + textUsuario + ' ! Te has conectado al servicio de chat para atención al cliente.<br>Por favor, presione el boton "Solicitar Operador" para iniciar el servicio.<br>Si deseas cerrar esta aplicación, presione el boton "Cerrar".';
+					mensaje_alert('popupPrimeraVez', 'mensaje2', msg);
+					
+					
+					function ejecutarInstancia(instancia){
+						
+						if(instancia == 'solicitaroperador' && statusPag == true){//la segunda condicion ayuda a indicar a la aplicacion, que se cerro la ultima conversacion...
+							
+							$('#popupPrimeraVez a#btnPedirAyuda').css('visibility', 'hidden');
+							$('#popupPrimeraVez div#mensaje2').html('Se ha solicitado un nuevo operador, por favor, espere...<br>Si deseas cerrar esta aplicación, presione el boton "Cerrar".');
+						}
+						
+					}
+					
+					revisarInstancia(textUsuario, textToken, ejecutarInstancia);					
+				}
+			}
+			
+			unlockUi();
+		}else{
+
+			alert('Hubo algun error en el servidor, no hay datos...');
+			unlockUi();
+			
+		}
+	}).fail(function( jqxhr, textStatus, error ) {
+		msg = "Ha ocurrido un error en la conexión, ofrecemos disculpas por los inconvenientes: " + error;
+		mensaje_alert('myPopupDiv','mensaje', msg);
+	   	unlockUi();
+	});
+
+}//--- FIN DE LA FUNCIÓN "cargarVentChat" ---
+
+function expirar(){
+	mensaje_alert('myPopupDiv', 'mensaje', 'El tiempo de sesión ha expirado.');
+	
+	setTimeout(function(){
+		window.location.href="../index.html";
+	},5000);
+}
+
+
+function solicitarOperador(){
+	lockUi();
+	
+	vUrl = textServicios+textDireccion+"enviarMensaje";
+	
+	$.getJSON(vUrl,{
+			cUsuario		:textUsuario,
+			cToken			:textToken,
+			CHCO_ID_USUARIO	:textUsuario,
+            CHME_MENSAJE	:'Solicito un operador',
+            TIPO			:1
+			
+		}).done(function(data){
+			
+			
+			function continuarProceso(){
+				unlockUi();
+				
+				$('#popupPrimeraVez a#btnPedirAyuda').css('visibility', 'hidden');
+				$('#popupPrimeraVez div#mensaje2').html('Se ha solicitado un nuevo operador, por favor, espere...<br>Si deseas cerrar esta aplicación, presione el boton "Cerrar".');
+			}
+			
+			actualizarInstancia(textUsuario, textToken, 'solicitaroperador', continuarProceso);
+			
+			
+        }).fail(function( jqxhr, textStatus, error ) {
+			unlockUi();
+			mensaje_alert('myPopupDiv', "mensaje", "Hay problemas de conexión con el servicio de chat, por favor, cierre esta aplicación y vuelva a intentarlo más tarde (error: " + err + ')');		
+					
+		}
+	);
+}// fin de la funcion "solicitar operador"
+
+
+function enviar(){
+	
+	if(noRepetido==10)
+		conMensaje = conMensaje + 1;
+	
+	if(conMensaje>2){
+		conMensaje =0;
+		noRepetido =0;
+	}
+
+	if($("#mensaUsu").val()!="" && noRepetido==0){
+
+		$.mobile.loading('show');
+		
+		noRepetido=10;
+		textArchivoValidacion = textServicios+textDireccion+"enviarMensaje";
+
+		$.getJSON(textArchivoValidacion,{
+			cUsuario		:textUsuario,
+			cToken			:textToken,
+			CHCO_ID_USUARIO	:textUsuario,
+            CHME_MENSAJE	:$("#mensaUsu").val(),
+            TIPO			:1
+			
+		}).done(function(data) {
+
+			recargarVentChat();
+			$("#mensaUsu").val('');
+			noRepetido = 0;
+			$.mobile.loading('hide');
+
+        }).fail(function( jqxhr, textStatus, error ) {
+			$("#contMsgChat").append('<li><div class="msgAliado"><div class="labelMsg">:Yo</div><div class="contMsg">' + $("#mensaUsu").val() + '<img src="../css/themes/images/icons-png/forbidden-black.png" style=" background-color:#F00; border-radius:2px;"></div></div></li>');
+			$.mobile.loading('hide');
+		    var err = textStatus + ", " + error;
+			mensaje_alert('myPopupDiv', "mensaje", "Hay problemas de conexión con el servicio de chat, por favor, cierre esta aplicación y vuelva a intentarlo más tarde (error: " + err + ')');
+			noRepetido = 0;
+		});
+	}
+
+}//--- fin de la función "enviar" ---
+
+
+function maximaLongitud(objTexto, longMax, codTecla){
+	var longTexto,
+		in_value, 
+		out_value;
+		
+	longText = objTexto.value.length;
+	//tecla = (document.all) ? e.keyCode : e.which; <-- Deprecado
+
+	if(longText > longMax || codTecla == 13){ //si la longitud del texto es mayor a la longitud maxima o se apreto la tecla con el codigo 13 (enter) entonces...
+		in_value 		= objTexto.value; 
+		out_value 		= in_value.substring(0, longMax); 
+		objTexto.value 	= out_value;
+		msg = 'No puedes enviar un mensaje con más de: ' + longMax + ' carácteres.';
+		mensaje_alert('myPopupDiv', 'mensaje', msg);
+		return false; 
+	}else{
+		return true;
+	}
+}//--- FIN DE LA FUNCIÓN "maximaLongitud"
+
+
+function recargarVentChat(){
+	/* Remuevo todos los elementos de la lista */
+		$('#contMsgChat li').remove();
+	/*******************************************/
+	/* Llamo a la función cargarVentChat */
+		cargarVentChat();
+	/*************************************/
+}
+
+function onResume(){
+	/* ESTA FUNCIÓN SE DISPARA CUANDO LA APLICACIÓN VUELVE A PRIMER PLANO */
+	/*** si el status de la página es true, entonces solo se hace el llamado a la función "cargarVentChat" ***/	
+	if(statusPag == true){
+		recargarVentChat();
+	}else{
+		cargarVentChat();	
+	}
+}
+
+	
+$(document).bind('pagecreate', function(){
+	jqmReady.resolve();//jqm ready, Indica que el jqueryMobile esta cargado y listo...
+	
+	//--- CARGAR LOS EVENTOS DE LA PÁGINA ---
+	$('#btnCerrarSesion').bind('vclick', cierreSesion);
+	$('#btnCerrarChat').bind('vclick', cierreSesion);
+	$('#btnEnviarMensaje').bind('vclick', enviar);
+	$('#btnPedirAyuda').bind('vclick', solicitarOperador);
+		
+	$('#mensaUsu').on('keyup', this, function(event){		
+		if(event.which != 13){
+			maximaLongitud(this, 140, event.which);
+		}
+	});
+	
+	$('#mensaUsu').on('keypress', this, function(event){
+		if(event.which == 13){
+			event.preventDefault();
+			enviar();//--> Envia el mensaje del chat
+		}
+	});
+	
+	//---------------------------------------
+});
+
+
+// phonegap ready
+document.addEventListener('deviceready', pgReady.resolve, false);
+
+$.when(jqmReady, pgReady).then(function () { 
+//--- se activa esta función si solo si, los plugins de phonegap se han cargado, jQuery está preparado, y el DOM esta cargado...
+		statusPag = false; //Indica que es la primera vez que se entra a esta página
+		
+		//---llamamos el registro al servicio de google ---
+		app.initialize();	
+		//-------------------------------------------------	
+		
+		/*** EVENTOS DEL DISPOSITIVO ***/
+		document.addEventListener("resume", onResume, false);
+		/*******************************/
+	
+		cargarVentChat();
+});
+</script>
+
+<style type="text/css">
+/*** FORMATEA LAS ETIQUETAS <LI> QUE SE CARGAN EN LA VENTANA DEL CHAT ***/
+.ui-li-static, .ui-body-inherit{
+	background-color:#FFFFFF !important;
+	border:0px solid #FFFFFF !important;
+	height:auto;
+	padding:0px !important;
+	margin:0px !important;
+	white-space:normal !important;
+}
+
+/*** FORMATEA EL PIE DE PÁGINA Y AGREGA LOS ESTILOS DEL INPUT TEXT PARA LOS MENSAJES***/
+.ui-controlgroup-controls {
+	text-align:center;
+}
+
+.ui-controlgroup-horizontal{	
+}
+
+.ui-controlgroup-controls{
+	width:100% !important;
+	background-color:#696969;
+}
+
+.ui-footer .ui-controlgroup-horizontal{
+}
+
+.ui-footer{
+	background-color:#696969 !important;
+	background-image:none !important;
+}
+
+.controlgroup-textinput{
+	border-radius:5px 0px 0px 5px;
+	display:block !important;
+	height:2em !important;
+	padding-bottom:.22em !important;
+    padding-top:.22em !important;
+	padding-left:5px !important;
+	padding-rigth:5px !important;
+	margin-left:5px !important;
+	position:absolute;
+	resize:none !important;
+	text-align:left;
+	width:89% !important;
+}
+
+#btnEnviarMensaje{
+	border-radius:0px 5px 5px 0px;
+	display:block;
+	position:relative;
+	left:89%;
+	height:1em !important;
+	padding:1em 1em 1em 1em !important;
+	width:10%;
+}
+/************************************************************************/
+</style>
+
+</head>
+<body>
+
+
+<div id="block-ui"></div>
+
+<div data-role="page" data-id="header" data-theme="b">
+        
+<!-- Sección de los popup -->
+<!--- POPUP CERRAR SESION --->
+    <div data-role="popup" 
+    	id="popupCerrarSesion"
+        data-overlay-theme="b"
+        data-transition="pop"
+        class="ui-content">
+        <div data-role="header"><h1>¡Alerta!</h1></div>
+        <div data-role="content" style="text-align:center;">
+        <p>¿Deseas cerrar la sesión actual?</p>
+     
+        <a href="#"
+        	data-role="button"
+            id="btnCerrarSesion"
+            class="ui-btn ui-shadow ui-corner-all ui-btn-inline"
+            >Sí</a>
+        
+        <a href="#"
+        	data-role="button"
+            data-rel="back"
+            class="ui-btn ui-shadow ui-corner-all ui-btn-inline"
+            >No</a>
+        </div>
+    </div>
+<!--------------------------------------------------------->
+
+<!--- POPUP PARA MENSAJES DE TIPO ALERT --->
+    <div data-role="popup"
+        data-overlay-theme="b"
+        data-dismissible="false"
+        id="myPopupDiv"
+        data-transition="pop"
+        class="ui-content">
+    
+    	<a href="#" 
+        	data-rel="back" 
+            class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-icon-delete ui-btn-icon-notext ui-btn-right"></a>
+		<div id="mensaje" class="mensajes"></div>
+	</div>
+<!------------------------------------------->
+
+<!---POPUP PARA MENSAJE POR PRIMERA VEZ --->
+    <div data-overlay-theme="b"
+    	id="popupPrimeraVez"  
+    	data-role="popup"
+        data-dismissible="false"
+        data-transition="pop" 
+        data-position-to="window" style="text-align:center;">
+    	
+        <div data-role="header">
+        	<h1>¡Bienvenido!</h1>
+        </div>
+        
+        <div data-role="content">
+        	<div id="mensaje2" class="mensajes"></div>
+        
+        <a href="#"
+        	data-role="button"
+            id="btnCerrarChat"
+            class="ui-btn ui-shadow ui-corner-all ui-btn-inline"
+            >Cerrar</a>
+         
+        <a href="#"
+        	data-role="button"
+            id="btnPedirAyuda"
+            class="ui-btn ui-shadow ui-corner-all ui-btn-inline"
+        >Solicitar Operador</a> 
+        
+        </div>
+	</div>
+<!---------------------------------------------------->
+
+	<div data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false" data-transition="none" class="ui-shadow">
+    	<h1>Chat Ibero</h1>
+    
+       <a 	href="#popupCerrarSesion"
+        	id="btnPopupCerrarSesion"
+            data-rel="popup"
+            data-iconpos="notext"
+            data-position-to="window"
+            class="ui-btn ui-btn-left ui-icon-power ui-btn-icon-notext ui-shadow ui-corner-all"></a>
+        
+	</div>
+  
+	<div data-role="content" id="contenedorScroll" 
+    	 data-iscroll='{
+         	"hScroll"			:false,
+            "vScroll"			:true,
+			"preventTouchHover"	:false
+        }'>
+		<ul data-role="listview" id="contMsgChat">
+            
+	    </ul>
+	</div>
+
+	<div data-role="footer" 
+    	data-id="footer"
+    	data-position="fixed"
+    	data-tap-toggle="false" 
+        data-transition="none">
+        
+        <div data-role="controlgroup">
+    		<textarea id="mensaUsu" data-wrapper-class="controlgroup-textinput" placeholder="Escriba su mensaje aquí..."></textarea>
+    		<button data-mini="true" id="btnEnviarMensaje" data-icon="carat-r" data-iconpos="notext"></button>
+		</div>
+	</div>
+
+</div>
+	<script type="text/javascript" src="../phonegap.js"></script>
+    <script type="text/javascript" src="../js/SQLitePlugin.js"></script> 
+	<script type="text/javascript" src="../js/index.js"></script>
+  	<script type="text/javascript" src="../js/baseDatos.js"></script>
+</body>
+</html>
